@@ -20,22 +20,22 @@ uploaded_file = st.sidebar.file_uploader(
 )
 title_name = st.sidebar.text_input("Title Name", "YOUR NAME")
 initial_letter = st.sidebar.text_input(
-    "Initial Letter / Symbol", "YOUR INTIAL", max_chars=4
+    "Initial Letter / Symbol", "INITIAL", max_chars=6
 )
 
 st.sidebar.subheader("🎛️ Portrait Tuner")
 brightness_cutoff = st.sidebar.slider(
-    "Brightness Cut-off", min_value=0, max_value=150, value=30
+    "Brightness Cut-off", min_value=0, max_value=100, value=15
 )
 contrast_val = st.sidebar.slider(
-    "Contrast", min_value=0.5, max_value=2.5, value=1.2, step=0.1
+    "Contrast", min_value=0.5, max_value=3.0, value=1.5, step=0.1
 )
 dot_size = st.sidebar.slider(
     "Focus / Dot Size", min_value=0.5, max_value=2.0, value=1.0, step=0.1
 )
 
-display_title = title_name if title_name else "PARTHA SARATHY"
-display_initial = initial_letter if initial_letter else "S"
+display_title = title_name if title_name else "YOUR NAME"
+display_initial = initial_letter if initial_letter else "INITIAL"
 
 image_url = ""
 if uploaded_file is not None:
@@ -75,8 +75,10 @@ html_template = """
       margin-top: 15px;
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
   }
-  button {
+  button, a.download-link {
       background: #b3002d;
       color: white;
       border: none;
@@ -85,12 +87,18 @@ html_template = """
       font-weight: bold;
       border-radius: 5px;
       cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
   }
-  button:hover {
+  button:hover, a.download-link:hover {
       background: #e60039;
   }
   #record-btn.recording {
       background: #00b33c;
+  }
+  #download-container {
+      margin-top: 10px;
   }
 </style>
 </head>
@@ -102,6 +110,7 @@ html_template = """
       <button id="replayBtn">Replay Animation</button>
       <button id="record-btn">Record & Download WebM</button>
   </div>
+  <div id="download-container"></div>
 
 <script>
   const canvas = document.getElementById('cinemaCanvas');
@@ -116,27 +125,27 @@ html_template = """
 
   let portraitDots = [];
   const sCanvas = document.createElement('canvas');
-  sCanvas.width = 180;
-  sCanvas.height = 210;
+  sCanvas.width = 240;
+  sCanvas.height = 280;
   const sCtx = sCanvas.getContext('2d');
 
   function buildPortrait(imgObj) {
       sCtx.fillStyle = '#000';
-      sCtx.fillRect(0, 0, 180, 210);
-      sCtx.drawImage(imgObj, 0, 0, 180, 210);
-      const imgData = sCtx.getImageData(0, 0, 180, 210).data;
+      sCtx.fillRect(0, 0, 240, 280);
+      sCtx.drawImage(imgObj, 0, 0, 240, 280);
+      const imgData = sCtx.getImageData(0, 0, 240, 280).data;
       portraitDots = [];
-      for (let y = 0; y < 210; y += 2) {
-          for (let x = 0; x < 180; x += 2) {
-              const idx = (y * 180 + x) * 4;
+      for (let y = 0; y < 280; y += 2) {
+          for (let x = 0; x < 240; x += 2) {
+              const idx = (y * 240 + x) * 4;
               const r = imgData[idx];
               const g = imgData[idx+1];
               const b = imgData[idx+2];
               const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
-              if (brightness > 25) {
+              if (brightness > 10) {
                   portraitDots.push({
-                      ox: (x - 90) * 2.8,
-                      oy: (y - 105) * 2.8 - 20,
+                      ox: (x - 120) * 2.3,
+                      oy: (y - 140) * 2.3 - 20,
                       brightness: brightness,
                       phase: Math.random() * Math.PI * 2,
                       speed: 2 + Math.random() * 3
@@ -163,17 +172,17 @@ html_template = """
 
   function loadFallbackSilhouette() {
       sCtx.fillStyle = '#000';
-      sCtx.fillRect(0, 0, 180, 210);
+      sCtx.fillRect(0, 0, 240, 280);
       sCtx.fillStyle = '#fff';
       sCtx.beginPath();
-      sCtx.ellipse(90, 80, 48, 63, 0, 0, Math.PI * 2);
+      sCtx.ellipse(120, 110, 60, 80, 0, 0, Math.PI * 2);
       sCtx.fill();
-      sCtx.fillRect(45, 20, 90, 40);
+      sCtx.fillRect(60, 30, 120, 50);
       sCtx.fillStyle = '#000';
-      sCtx.fillRect(65, 65, 15, 10);
-      sCtx.fillRect(100, 65, 15, 10);
-      sCtx.fillRect(85, 85, 10, 25);
-      sCtx.fillRect(70, 120, 40, 12);
+      sCtx.fillRect(90, 90, 20, 12);
+      sCtx.fillRect(130, 90, 20, 12);
+      sCtx.fillRect(115, 115, 12, 35);
+      sCtx.fillRect(95, 160, 50, 15);
       buildPortrait(sCanvas);
   }
 
@@ -219,7 +228,6 @@ html_template = """
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, 1280, 720);
 
-      // Slow zoom-in on the entire scene
       const globalZoom = 1.0 + progress * 0.06;
       ctx.save();
       ctx.translate(640, 360);
@@ -232,12 +240,10 @@ html_template = """
           ctx.fillRect(s.x, s.y, s.size, s.size);
       });
 
-      // Stage 1: 3D Star
       if (progress < 0.25) {
           const sProg = progress / 0.25;
           draw3DStar(640, 360, Math.max(0.01, 4.5 - sProg * 3.5), sProg * Math.PI * 4);
       }
-      // Stage 2: Initial Letter Burst
       else if (progress >= 0.25 && progress < 0.45) {
           const s2Prog = (progress - 0.25) / 0.20;
           ctx.save();
@@ -251,11 +257,10 @@ html_template = """
           ctx.restore();
       }
 
-      // Stage 3 & 4: Dot-Matrix Portrait Formation & Twinkling
       if (progress >= 0.40) {
           const s3Prog = Math.min(1, (progress - 0.40) / 0.20);
           portraitDots.forEach(dot => {
-              const delayNorm = (dot.oy + 105) / 210 * 0.4;
+              const delayNorm = (dot.oy + 140) / 280 * 0.4;
               const localProg = Math.max(0, Math.min(1, (s3Prog - delayNorm) / 0.6));
               if (localProg > 0) {
                   let adj = (dot.brightness - cutOff) * contrast;
@@ -268,7 +273,6 @@ html_template = """
           });
       }
 
-      // Stage 5: Title Name Fade-in
       if (progress >= 0.55) {
           const s5Prog = Math.min(1, (progress - 0.55) / 0.25);
           ctx.save();
@@ -297,6 +301,8 @@ html_template = """
 
   let mediaRecorder, recordedChunks = [];
   const recordBtn = document.getElementById('record-btn');
+  const downloadContainer = document.getElementById('download-container');
+
   recordBtn.onclick = () => {
       if (recordBtn.classList.contains('recording')) {
           mediaRecorder.stop();
@@ -305,15 +311,19 @@ html_template = """
           return;
       }
       recordedChunks = [];
+      downloadContainer.innerHTML = "";
       const stream = canvas.captureStream(30);
-      mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+      try {
+          mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+      } catch (e) {
+          mediaRecorder = new MediaRecorder(stream);
+      }
+
       mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
       mediaRecorder.onstop = () => {
           const blob = new Blob(recordedChunks, { type: 'video/webm' });
           const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url; a.download = 'jailer2_title.webm';
-          a.click();
+          downloadContainer.innerHTML = `<a class="download-link" href="${url}" download="jailer2_title.webm">📥 Click Here to Download Your Video (.webm)</a>`;
       };
       startTime = performance.now();
       mediaRecorder.start();
@@ -341,4 +351,4 @@ html_content = (
     .replace("IMAGE_PLACEHOLDER", image_url)
 )
 
-st.components.v1.html(html_content, height=800, scrolling=False)
+st.components.v1.html(html_content, height=850, scrolling=False)
