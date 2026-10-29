@@ -9,21 +9,21 @@ st.set_page_config(
 
 st.title("🎬 Jailer 2 Style Cinematic Title Card Generator")
 st.write(
-    "Upload any photo, type your name and initial, tune the portrait, and"
+    "Upload your photo, type your name and initial, tune the portrait, and"
     " record your custom video!"
 )
 
-# Sidebar controls for user customization (left completely blank for any user)
+# Sidebar controls for user customization
 st.sidebar.header("✨ Customize Your Video")
 
 uploaded_file = st.sidebar.file_uploader(
     "Upload Your Photo (JPG/PNG)", type=["jpg", "jpeg", "png"]
 )
 title_name = st.sidebar.text_input(
-    "Title Name", "", placeholder="Enter Name (e.g. RAJINIKANTH)"
+    "Title Name", "", placeholder="Enter Name (e.g. SRINIVASAN N)"
 )
 initial_letter = st.sidebar.text_input(
-    "Initial Letter / Symbol", "", max_chars=4, placeholder="e.g. R.K"
+    "Initial Letter / Symbol", "", max_chars=4, placeholder="e.g. N.S"
 )
 
 st.sidebar.subheader("🎛️ Portrait Tuner")
@@ -33,15 +33,15 @@ brightness_cutoff = st.sidebar.slider(
 contrast_val = st.sidebar.slider(
     "Contrast", min_value=0.5, max_value=2.5, value=1.2, step=0.1
 )
+# Lowered minimum dot size to 0.5 for ultra-fine, tiny dots!
 focus_size = st.sidebar.slider(
-    "Focus / Dot Size", min_value=1.0, max_value=3.0, value=1.5, step=0.2
+    "Focus / Dot Size", min_value=0.5, max_value=2.0, value=1.0, step=0.1
 )
 
-# Fallback text if user leaves inputs empty
-display_title = title_name if title_name else "YOUR NAME"
-display_initial = initial_letter if initial_letter else "X.Y"
+display_title = title_name if title_name else "SRINIVASAN N"
+display_initial = initial_letter if initial_letter else "N.S"
 
-# Convert uploaded image to base64 data URL so JavaScript can read it
+# Convert uploaded image to base64 data URL
 image_data_url = ""
 if uploaded_file is not None:
     bytes_data = uploaded_file.getvalue()
@@ -143,41 +143,43 @@ html_content = f"""
 
         function loadFallbackSilhouette() {{
             const sCanvas = document.createElement('canvas');
-            sCanvas.width = 120; sCanvas.height = 140;
+            sCanvas.width = 180; sCanvas.height = 210;
             const sCtx = sCanvas.getContext('2d');
-            sCtx.fillStyle = '#000'; sCtx.fillRect(0, 0, 120, 140);
+            sCtx.fillStyle = '#000'; sCtx.fillRect(0, 0, 180, 210);
             sCtx.fillStyle = '#fff';
-            sCtx.beginPath(); sCtx.ellipse(60, 55, 32, 42, 0, 0, Math.PI * 2); sCtx.fill();
-            sCtx.fillRect(30, 15, 60, 25);
+            sCtx.beginPath(); sCtx.ellipse(90, 80, 48, 63, 0, 0, Math.PI * 2); sCtx.fill();
+            sCtx.fillRect(45, 20, 90, 40);
             
             sCtx.fillStyle = '#000';
-            sCtx.fillRect(45, 45, 10, 6);
-            sCtx.fillRect(65, 45, 10, 6);
-            sCtx.fillRect(57, 56, 6, 16);
-            sCtx.fillRect(48, 80, 24, 8);
+            sCtx.fillRect(65, 65, 15, 10);
+            sCtx.fillRect(100, 65, 15, 10);
+            sCtx.fillRect(85, 85, 10, 25);
+            sCtx.fillRect(70, 120, 40, 12);
             extractDotsFromImage(sCanvas);
         }}
 
         function extractDotsFromImage(source) {{
+            // High-resolution source canvas for maximum clarity and tiny dots
             const sCanvas = document.createElement('canvas');
-            sCanvas.width = 120; 
-            sCanvas.height = 140;
+            sCanvas.width = 180; 
+            sCanvas.height = 210;
             const sCtx = sCanvas.getContext('2d');
-            sCtx.drawImage(source, 0, 0, 120, 140);
-            const imgData = sCtx.getImageData(0, 0, 120, 140);
+            sCtx.drawImage(source, 0, 0, 180, 210);
+            const imgData = sCtx.getImageData(0, 0, 180, 210);
 
             portraitDots = [];
-            for (let y = 0; y < 140; y += 3) {{
-                for (let x = 0; x < 120; x += 3) {{
-                    const idx = (y * 120 + x) * 4;
+            // Step size = 2 for high density and crisp detail
+            for (let y = 0; y < 210; y += 2) {{
+                for (let x = 0; x < 180; x += 2) {{
+                    const idx = (y * 180 + x) * 4;
                     const r = imgData.data[idx];
                     const g = imgData.data[idx+1];
                     const b = imgData.data[idx+2];
                     const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
                     if (brightness > 20) {{
                         portraitDots.push({{
-                            ox: (x - 60) * 4.2,
-                            oy: (y - 70) * 4.2 - 20,
+                            ox: (x - 90) * 2.8,
+                            oy: (y - 105) * 2.8 - 20,
                             brightness: brightness,
                             phase: Math.random() * Math.PI * 2,
                             speed: 2 + Math.random() * 3
@@ -235,10 +237,12 @@ html_content = f"""
                 ctx.fillRect(s.x, s.y, s.size, s.size);
             }});
 
+            // Stage 1: Star
             if (progress < 0.25) {{
                 const sProg = progress / 0.25;
                 draw3DStar(640, 360, Math.max(0.01, 4.5 - sProg * 3.5), sProg * Math.PI * 4);
             }} 
+            // Stage 2: Initial Letter
             else if (progress >= 0.25 && progress < 0.45) {{
                 const s2Prog = (progress - 0.25) / 0.20;
                 ctx.save();
@@ -252,82 +256,8 @@ html_content = f"""
                 ctx.restore();
             }}
 
+            // Stage 3 & 4: Dot Matrix Portrait
             if (progress >= 0.40) {{
                 const s3Prog = Math.min(1, (progress - 0.40) / 0.20);
                 portraitDots.forEach(dot => {{
-                    const delayNorm = (dot.oy + 70) / 140 * 0.4;
-                    const localProg = Math.max(0, Math.min(1, (s3Prog - delayNorm) / 0.6));
-                    if (localProg > 0) {{
-                        let adj = (dot.brightness - cutOff) * contrast;
-                        if (adj < 0) adj = 0;
-                        dot.phase += 0.05;
-                        const alpha = Math.min(1, adj / 180) * localProg * (0.7 + 0.3 * Math.sin(dot.phase * dot.speed));
-                        ctx.fillStyle = 'rgba(255, 180, 210, ' + alpha + ')';
-                        ctx.fillRect(640 + dot.ox, 360 + dot.oy, baseDotSize, baseDotSize);
-                    }}
-                }});
-            }}
-
-            if (progress >= 0.55) {{
-                const s5Prog = Math.min(1, (progress - 0.55) / 0.25);
-                ctx.save();
-                ctx.font = '900 42px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(255, 0, 60, 0.9)';
-                ctx.shadowBlur = 20;
-                ctx.fillStyle = 'rgba(255, 255, 255, ' + s5Prog + ')';
-                ctx.fillText(titleText, 640, 635);
-                ctx.restore();
-            }}
-
-            requestAnimationFrame(renderFrame);
-        }}
-
-        requestAnimationFrame((now) => {{
-            startTime = now;
-            requestAnimationFrame(renderFrame);
-        }});
-
-        document.getElementById('replayBtn').onclick = () => {{
-            startTime = performance.now();
-        }};
-
-        let mediaRecorder, recordedChunks = [];
-        const recordBtn = document.getElementById('record-btn');
-        recordBtn.onclick = () => {{
-            if (recordBtn.classList.contains('recording')) {{
-                mediaRecorder.stop();
-                recordBtn.classList.remove('recording');
-                recordBtn.innerText = "Record & Download WebM";
-                return;
-            }}
-            recordedChunks = [];
-            const stream = canvas.captureStream(30);
-            mediaRecorder = new MediaRecorder(stream, {{ mimeType: 'video/webm' }});
-            mediaRecorder.ondataavailable = e => {{ if (e.data.size > 0) recordedChunks.push(e.data); }};
-            mediaRecorder.onstop = () => {{
-                const blob = new Blob(recordedChunks, {{ type: 'video/webm' }});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = 'jailer2_title.webm';
-                a.click();
-            }};
-            startTime = performance.now();
-            mediaRecorder.start();
-            recordBtn.classList.add('recording');
-            recordBtn.innerText = "Recording... Click to Stop";
-            setTimeout(() => {{
-                if (recordBtn.classList.contains('recording')) {{
-                    mediaRecorder.stop();
-                    recordBtn.classList.remove('recording');
-                    recordBtn.innerText = "Record & Download WebM";
-                }}
-            }}, animationDuration);
-        }};
-    </script>
-</body>
-</html>
-"""
-
-st.components.v1.html(html_content, height=800, scrolling=False)
+                    const delayNorm = (dot.oy + 105) / 21
