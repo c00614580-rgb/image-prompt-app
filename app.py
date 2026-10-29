@@ -18,9 +18,9 @@ st.sidebar.header("✨ Customization Controls")
 uploaded_file = st.sidebar.file_uploader(
     "Upload Your Photo", type=["jpg", "jpeg", "png"]
 )
-title_name = st.sidebar.text_input("Title Name", "PARTHA SARATHY")
+title_name = st.sidebar.text_input("Title Name", "YOUR NAME")
 initial_letter = st.sidebar.text_input(
-    "Initial Letter / Symbol", "S", max_chars=4
+    "Initial Letter / Symbol", "YOUR INTIAL", max_chars=4
 )
 
 st.sidebar.subheader("🎛️ Portrait Tuner")
