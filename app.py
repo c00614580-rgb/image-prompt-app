@@ -28,7 +28,7 @@ focus_size = st.sidebar.slider(
     "Focus / Dot Size", min_value=1.0, max_value=3.0, value=1.5, step=0.2
 )
 
-# Embedded HTML/JS Canvas App via Streamlit Components
+# HTML/JS Canvas App injected safely without f-string conflicts
 html_content = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -44,24 +44,24 @@ html_content = f"""
             flex-direction: column;
             align-items: center;
             justify-content: center;
-        }
+        }}
         #canvas-container {{
             position: relative;
             width: 100%;
             max-width: 900px;
             box-shadow: 0 0 20px rgba(255, 0, 60, 0.3);
             background: #000;
-        }
+        }}
         canvas {{
             display: block;
             width: 100% !important;
             height: auto !important;
-        }
+        }}
         .btn-container {{
             margin-top: 15px;
             display: flex;
             gap: 10px;
-        }
+        }}
         button {{
             background: #b3002d;
             color: white;
@@ -186,7 +186,7 @@ html_content = f"""
 
             backgroundSparkles.forEach(s => {{
                 s.alpha += s.twinkleSpeed;
-                ctx.fillStyle = `rgba(255, 255, 255, ${((Math.sin(s.alpha) + 1) / 2) * 0.7})`;
+                ctx.fillStyle = `rgba(255, 255, 255, ${{(Math.sin(s.alpha) + 1) / 2 * 0.7}})`;
                 ctx.fillRect(s.x, s.y, s.size, s.size);
             }});
 
@@ -204,7 +204,7 @@ html_content = f"""
                 ctx.textBaseline = 'middle';
                 ctx.shadowColor = 'rgba(255, 0, 80, 0.8)';
                 ctx.shadowBlur = 25;
-                ctx.fillStyle = `rgba(255, 255, 255, ${s2Prog < 0.8 ? s2Prog * 3 : (1 - s2Prog) * 5})`;
+                ctx.fillStyle = `rgba(255, 255, 255, ${{(s2Prog < 0.8 ? s2Prog * 3 : (1 - s2Prog) * 5)}})`;
                 ctx.fillText(initialSymbol, 640, 360);
                 ctx.restore();
             }}
@@ -220,7 +220,7 @@ html_content = f"""
                         if (adj < 0) adj = 0;
                         dot.phase += 0.05;
                         const alpha = Math.min(1, adj / 180) * localProg * (0.7 + 0.3 * Math.sin(dot.phase * dot.speed));
-                        ctx.fillStyle = `rgba(255, 180, 210, ${alpha})`;
+                        ctx.fillStyle = `rgba(255, 180, 210, ${{alpha}})`;
                         ctx.fillRect(640 + dot.ox, 360 + dot.oy, baseDotSize, baseDotSize);
                     }}
                 }});
@@ -235,7 +235,7 @@ html_content = f"""
                 ctx.textBaseline = 'middle';
                 ctx.shadowColor = 'rgba(255, 0, 60, 0.9)';
                 ctx.shadowBlur = 20;
-                ctx.fillStyle = `rgba(255, 255, 255, ${s5Prog})`;
+                ctx.fillStyle = `rgba(255, 255, 255, ${{s5Prog}})`;
                 ctx.fillText(titleText, 640, 635);
                 ctx.restore();
             }}
