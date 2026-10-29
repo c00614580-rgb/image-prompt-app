@@ -33,7 +33,6 @@ brightness_cutoff = st.sidebar.slider(
 contrast_val = st.sidebar.slider(
     "Contrast", min_value=0.5, max_value=2.5, value=1.2, step=0.1
 )
-# Lowered minimum dot size to 0.5 for ultra-fine, tiny dots!
 focus_size = st.sidebar.slider(
     "Focus / Dot Size", min_value=0.5, max_value=2.0, value=1.0, step=0.1
 )
@@ -41,7 +40,6 @@ focus_size = st.sidebar.slider(
 display_title = title_name if title_name else "SRINIVASAN N"
 display_initial = initial_letter if initial_letter else "N.S"
 
-# Convert uploaded image to base64 data URL
 image_data_url = ""
 if uploaded_file is not None:
     bytes_data = uploaded_file.getvalue()
@@ -49,13 +47,14 @@ if uploaded_file is not None:
     file_extension = uploaded_file.type.split("/")[-1]
     image_data_url = f"data:image/{file_extension};base64,{b64_encoded}"
 
-html_content = f"""
+# Standard multi-line string combined with safe string replacement
+html_template = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <style>
-        body {{
+        body {
             margin: 0;
             background-color: #000;
             color: #fff;
@@ -64,25 +63,25 @@ html_content = f"""
             flex-direction: column;
             align-items: center;
             justify-content: center;
-        }}
-        #canvas-container {{
+        }
+        #canvas-container {
             position: relative;
             width: 100%;
             max-width: 900px;
             box-shadow: 0 0 25px rgba(255, 0, 60, 0.4);
             background: #000;
-        }}
-        canvas {{
+        }
+        canvas {
             display: block;
             width: 100% !important;
             height: auto !important;
-        }}
-        .btn-container {{
+        }
+        .btn-container {
             margin-top: 15px;
             display: flex;
             gap: 10px;
-        }}
-        button {{
+        }
+        button {
             background: #b3002d;
             color: white;
             border: none;
@@ -91,13 +90,13 @@ html_content = f"""
             font-weight: bold;
             border-radius: 5px;
             cursor: pointer;
-        }}
-        button:hover {{
+        }
+        button:hover {
             background: #e60039;
-        }}
-        #record-btn.recording {{
+        }
+        #record-btn.recording {
             background: #00b33c;
-        }}
+        }
     </style>
 </head>
 <body>
@@ -115,33 +114,33 @@ html_content = f"""
         const canvas = document.getElementById('cinemaCanvas');
         const ctx = canvas.getContext('2d');
 
-        const titleText = "{display_title}";
-        const initialSymbol = "{display_initial}";
-        const cutOff = {brightness_cutoff};
-        const contrast = {contrast_val};
-        const baseDotSize = {focus_size};
-        const userImgSrc = "{image_data_url}";
+        const titleText = "TITLE_PLACEHOLDER";
+        const initialSymbol = "INITIAL_PLACEHOLDER";
+        const cutOff = CUTOFF_PLACEHOLDER;
+        const contrast = CONTRAST_PLACEHOLDER;
+        const baseDotSize = FOCUS_PLACEHOLDER;
+        const userImgSrc = "IMAGE_PLACEHOLDER";
 
         let portraitDots = [];
 
         const imgObj = new Image();
         imgObj.crossOrigin = "anonymous";
         
-        imgObj.onload = function() {{
+        imgObj.onload = function() {
             extractDotsFromImage(imgObj);
-        }};
+        };
 
-        imgObj.onerror = function() {{
+        imgObj.onerror = function() {
             loadFallbackSilhouette();
-        }};
+        };
 
-        if (userImgSrc !== "") {{
+        if (userImgSrc !== "") {
             imgObj.src = userImgSrc;
-        }} else {{
+        } else {
             loadFallbackSilhouette();
-        }}
+        }
 
-        function loadFallbackSilhouette() {{
+        function loadFallbackSilhouette() {
             const sCanvas = document.createElement('canvas');
             sCanvas.width = 180; sCanvas.height = 210;
             const sCtx = sCanvas.getContext('2d');
@@ -156,10 +155,9 @@ html_content = f"""
             sCtx.fillRect(85, 85, 10, 25);
             sCtx.fillRect(70, 120, 40, 12);
             extractDotsFromImage(sCanvas);
-        }}
+        }
 
-        function extractDotsFromImage(source) {{
-            // High-resolution source canvas for maximum clarity and tiny dots
+        function extractDotsFromImage(source) {
             const sCanvas = document.createElement('canvas');
             sCanvas.width = 180; 
             sCanvas.height = 210;
@@ -168,96 +166,82 @@ html_content = f"""
             const imgData = sCtx.getImageData(0, 0, 180, 210);
 
             portraitDots = [];
-            // Step size = 2 for high density and crisp detail
-            for (let y = 0; y < 210; y += 2) {{
-                for (let x = 0; x < 180; x += 2) {{
+            for (let y = 0; y < 210; y += 2) {
+                for (let x = 0; x < 180; x += 2) {
                     const idx = (y * 180 + x) * 4;
                     const r = imgData.data[idx];
                     const g = imgData.data[idx+1];
                     const b = imgData.data[idx+2];
                     const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
-                    if (brightness > 20) {{
-                        portraitDots.push({{
+                    if (brightness > 20) {
+                        portraitDots.push({
                             ox: (x - 90) * 2.8,
                             oy: (y - 105) * 2.8 - 20,
                             brightness: brightness,
                             phase: Math.random() * Math.PI * 2,
                             speed: 2 + Math.random() * 3
-                        }});
-                    }}
-                }}
-            }}
-        }}
+                        });
+                    }
+                }
+            }
+        }
 
         let startTime = performance.now();
         const animationDuration = 18000;
 
-        function draw3DStar(cx, cy, scale, rotAngle) {{
+        function draw3DStar(cx, cy, scale, rotAngle) {
             ctx.save();
             ctx.translate(cx, cy);
             ctx.rotate(rotAngle);
             ctx.scale(scale, scale);
             const points = 5, outerR = 120, innerR = 50;
 
-            for (let layer = 0; layer < 3; layer++) {{
+            for (let layer = 0; layer < 3; layer++) {
                 const layerScale = 1 - layer * 0.15;
                 ctx.beginPath();
-                for (let i = 0; i < points * 2; i++) {{
+                for (let i = 0; i < points * 2; i++) {
                     const r = (i % 2 === 0) ? outerR * layerScale : innerR * layerScale;
                     const angle = (i * Math.PI) / points - Math.PI / 2;
                     const x = Math.cos(angle) * r;
                     const y = Math.sin(angle) * r;
                     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-                }}
+                }
                 ctx.closePath();
                 const grad = ctx.createLinearGradient(-outerR, -outerR, outerR, outerR);
                 grad.addColorStop(0, 'rgba(240, 245, 255, 0.9)');
                 grad.addColorStop(1, 'rgba(90, 100, 115, 0.9)');
                 ctx.fillStyle = grad;
                 ctx.fill();
-            }}
+            }
             ctx.restore();
-        }}
+        }
 
-        const backgroundSparkles = Array.from({{ length: 100 }}, () => ({{
+        const backgroundSparkles = Array.from({ length: 100 }, () => ({
             x: Math.random() * 1280, y: Math.random() * 720,
             size: Math.random() * 2 + 0.5, alpha: Math.random(), twinkleSpeed: 0.03
-        }}));
+        }));
 
-        function renderFrame(now) {{
+        function renderFrame(now) {
             const elapsed = (now - startTime) % animationDuration;
             const progress = elapsed / animationDuration;
 
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, 1280, 720);
 
-            backgroundSparkles.forEach(s => {{
+            backgroundSparkles.forEach(s => {
                 s.alpha += s.twinkleSpeed;
                 ctx.fillStyle = 'rgba(255, 255, 255, ' + ((Math.sin(s.alpha) + 1) / 2 * 0.7) + ')';
                 ctx.fillRect(s.x, s.y, s.size, s.size);
-            }});
+            });
 
-            // Stage 1: Star
-            if (progress < 0.25) {{
+            if (progress < 0.25) {
                 const sProg = progress / 0.25;
                 draw3DStar(640, 360, Math.max(0.01, 4.5 - sProg * 3.5), sProg * Math.PI * 4);
-            }} 
-            // Stage 2: Initial Letter
-            else if (progress >= 0.25 && progress < 0.45) {{
+            } 
+            else if (progress >= 0.25 && progress < 0.45) {
                 const s2Prog = (progress - 0.25) / 0.20;
                 ctx.save();
                 ctx.font = 'bold 130px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(255, 0, 80, 0.8)';
-                ctx.shadowBlur = 25;
-                ctx.fillStyle = 'rgba(255, 255, 255, ' + (s2Prog < 0.8 ? s2Prog * 3 : (1 - s2Prog) * 5) + ')';
-                ctx.fillText(initialSymbol, 640, 360);
-                ctx.restore();
-            }}
-
-            // Stage 3 & 4: Dot Matrix Portrait
-            if (progress >= 0.40) {{
-                const s3Prog = Math.min(1, (progress - 0.40) / 0.20);
-                portraitDots.forEach(dot => {{
-                    const delayNorm = (dot.oy + 105) / 21
+                ctx.
