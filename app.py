@@ -1,3 +1,4 @@
+import base64
 import streamlit as st
 
 st.set_page_config(
@@ -8,12 +9,16 @@ st.set_page_config(
 
 st.title("🎬 Jailer 2 Style Title Card Generator")
 st.write(
-    "Create and customize your cinematic title card with an animated 3D star,"
-    " dot-matrix portrait, and title text!"
+    "Upload your photo, set your name and initials, and watch the cinematic"
+    " animation come to life!"
 )
 
-# Sidebar controls for customization
-st.sidebar.header("✨ Customization Controls")
+# Sidebar Customization & Image Upload
+st.sidebar.header("✨ Customization & Media")
+uploaded_file = st.sidebar.file_uploader(
+    "Upload your photo (JPG/PNG)", type=["jpg", "jpeg", "png"]
+)
+
 title_name = st.sidebar.text_input("Title Name", "SRINIVASAN N")
 initial_letter = st.sidebar.text_input(
     "Initial Letter / Symbol", "N.S", max_chars=4
@@ -28,7 +33,15 @@ focus_size = st.sidebar.slider(
     "Focus / Dot Size", min_value=1.0, max_value=3.0, value=1.5, step=0.2
 )
 
-# HTML/JS Canvas App injected safely without f-string conflicts
+# Handle uploaded image conversion to base64 data URL
+image_data_url = ""
+if uploaded_file is not None:
+    bytes_data = uploaded_file.getvalue()
+    b64_encoded = base64.b64encode(bytes_data).decode("utf-8")
+    file_extension = uploaded_file.type.split("/")[-1]
+    image_data_url = f"data:image/{file_extension};base64,{b64_encoded}"
+
+# HTML/JS Canvas App with real image handling
 html_content = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -100,44 +113,61 @@ html_content = f"""
         const cutOff = {brightness_cutoff};
         const contrast = {contrast_val};
         const baseDotSize = {focus_size};
+        const userImgSrc = "{image_data_url}";
 
-        // Procedural Portrait Mapping
-        const sourceCanvas = document.createElement('canvas');
-        sourceCanvas.width = 120;
-        sourceCanvas.height = 140;
-        const sCtx = sourceCanvas.getContext('2d');
-        
-        function generateSourcePortrait() {{
-            sCtx.fillStyle = '#000';
-            sCtx.fillRect(0, 0, 120, 140);
-            sCtx.fillStyle = '#fff';
-            sCtx.beginPath();
-            sCtx.ellipse(60, 55, 32, 42, 0, 0, Math.PI * 2);
-            sCtx.fill();
-            sCtx.fillRect(30, 15, 60, 25);
-            
-            sCtx.fillStyle = '#000';
-            sCtx.fillRect(45, 45, 10, 6);
-            sCtx.fillRect(65, 45, 10, 6);
-            sCtx.fillRect(57, 56, 6, 16);
-            sCtx.fillRect(48, 80, 24, 8);
+        let portraitDots = [];
+
+        // Load image or use fallback silhouette if no image uploaded
+        const sourceImg = new Image();
+        sourceImg.crossOrigin = "anonymous";
+        sourceImg.onload = function() {{
+            processImage(sourceImg);
+        }};
+        sourceImg.onerror = function() {{
+            createFallbackSilhouette();
+        }};
+
+        if (userImgSrc) {{
+            sourceImg.src = userImgSrc;
+        }} else {{
+            createFallbackSilhouette();
         }}
-        generateSourcePortrait();
 
-        const portraitImgData = sCtx.getImageData(0, 0, 120, 140);
-        const portraitDots = [];
-        for (let y = 0; y < 140; y += 3) {{
-            for (let x = 0; x < 120; x += 3) {{
-                const idx = (y * 120 + x) * 4;
-                const brightness = portraitImgData.data[idx];
-                if (brightness > 20) {{
-                    portraitDots.push({{
-                        ox: (x - 60) * 4.2,
-                        oy: (y - 70) * 4.2 - 20,
-                        brightness: brightness,
-                        phase: Math.random() * Math.PI * 2,
-                        speed: 2 + Math.random() * 3
-                    }});
+        function createFallbackSilhouette() {{
+            const sCanvas = document.createElement('canvas');
+            sCanvas.width = 120; sCanvas.height = 140;
+            const sCtx = sCanvas.getContext('2d');
+            sCtx.fillStyle = '#000'; sCtx.fillRect(0, 0, 120, 140);
+            sCtx.fillStyle = '#fff';
+            sCtx.beginPath(); sCtx.ellipse(60, 55, 32, 42, 0, 0, Math.PI * 2); sCtx.fill();
+            sCtx.fillRect(30, 15, 60, 25);
+            processImage(sCanvas);
+        }}
+
+        function processImage(imgObj) {{
+            const sCanvas = document.createElement('canvas');
+            sCanvas.width = 120; sCanvas.height = 140;
+            const sCtx = sCanvas.getContext('2d');
+            sCtx.drawImage(imgObj, 0, 0, 120, 140);
+            const imgData = sCtx.getImageData(0, 0, 120, 140);
+
+            portraitDots = [];
+            for (let y = 0; y < 140; y += 3) {{
+                for (let x = 0; x < 120; x += 3) {{
+                    const idx = (y * 120 + x) * 4;
+                    const r = imgData.data[idx];
+                    const g = imgData.data[idx+1];
+                    const b = imgData.data[idx+2];
+                    const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+                    if (brightness > 20) {{
+                        portraitDots.push({{
+                            ox: (x - 60) * 4.2,
+                            oy: (y - 70) * 4.2 - 20,
+                            brightness: brightness,
+                            phase: Math.random() * Math.PI * 2,
+                            speed: 2 + Math.random() * 3
+                        }});
+                    }}
                 }}
             }}
         }}
@@ -186,7 +216,7 @@ html_content = f"""
 
             backgroundSparkles.forEach(s => {{
                 s.alpha += s.twinkleSpeed;
-                ctx.fillStyle = `rgba(255, 255, 255, ${{(Math.sin(s.alpha) + 1) / 2 * 0.7}})`;
+                ctx.fillStyle = 'rgba(255, 255, 255, ' + ((Math.sin(s.alpha) + 1) / 2 * 0.7) + ')';
                 ctx.fillRect(s.x, s.y, s.size, s.size);
             }});
 
@@ -204,7 +234,7 @@ html_content = f"""
                 ctx.textBaseline = 'middle';
                 ctx.shadowColor = 'rgba(255, 0, 80, 0.8)';
                 ctx.shadowBlur = 25;
-                ctx.fillStyle = `rgba(255, 255, 255, ${{(s2Prog < 0.8 ? s2Prog * 3 : (1 - s2Prog) * 5)}})`;
+                ctx.fillStyle = 'rgba(255, 255, 255, ' + (s2Prog < 0.8 ? s2Prog * 3 : (1 - s2Prog) * 5) + ')';
                 ctx.fillText(initialSymbol, 640, 360);
                 ctx.restore();
             }}
@@ -220,7 +250,7 @@ html_content = f"""
                         if (adj < 0) adj = 0;
                         dot.phase += 0.05;
                         const alpha = Math.min(1, adj / 180) * localProg * (0.7 + 0.3 * Math.sin(dot.phase * dot.speed));
-                        ctx.fillStyle = `rgba(255, 180, 210, ${{alpha}})`;
+                        ctx.fillStyle = 'rgba(255, 180, 210, ' + alpha + ')';
                         ctx.fillRect(640 + dot.ox, 360 + dot.oy, baseDotSize, baseDotSize);
                     }}
                 }});
@@ -235,7 +265,7 @@ html_content = f"""
                 ctx.textBaseline = 'middle';
                 ctx.shadowColor = 'rgba(255, 0, 60, 0.9)';
                 ctx.shadowBlur = 20;
-                ctx.fillStyle = `rgba(255, 255, 255, ${{s5Prog}})`;
+                ctx.fillStyle = 'rgba(255, 255, 255, ' + s5Prog + ')';
                 ctx.fillText(titleText, 640, 635);
                 ctx.restore();
             }}
